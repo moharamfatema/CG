@@ -3,6 +3,17 @@
 #include <optional>
 
 class MyGLApp : public GLApp {
+private:
+  // create the dot product function here to perform t * rayDir
+  float dotProduct(const Vec3 &a, const Vec3 &b)
+  {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+  }
+  float scalarMultiply(const Vec3 &a, const float &b)
+  {
+    return a.x * b + a.y * b + a.z * b;
+  }
+
 public:
   Image image{1024,1024};
   
@@ -22,8 +33,35 @@ public:
     // If the function works correctly, you should
     // see a glossy red sphere, illuminated from
     // the top front
-    
-    return {};
+
+    const Vec3 rayDir = Vec3::normalize(pixelPos - rayOrigin);
+    const Vec3 oc = rayOrigin - sphereCenter;
+    const float a = Vec3::dot(rayDir, rayDir);
+    const float b = 2.0f * Vec3::dot(oc, rayDir);
+    const float c = Vec3::dot(oc, oc) - radius * radius;
+    const float discriminant = b * b - 4.0f * a * c;
+    if (discriminant < 0.0f)
+    {
+      // No intersection
+      return {};
+    }
+    float t0 = (-b - sqrt(discriminant)) / (2.0f * a);
+    float t1 = (-b + sqrt(discriminant)) / (2.0f * a);
+    if (t0 > t1)
+    {
+      std::swap(t0, t1);
+    }
+    if (t0 < 0.0f)
+    {
+      t0 = t1; // if t0 is negative, let's use t1 instead
+      if (t0 < 0.0f)
+      {
+        // both t0 and t1 are negative
+        return {};
+      }
+    }
+    // Return the intersection point
+    return rayOrigin + rayDir * t0;
   }
   
   Vec3 computeLighting(const Vec3& rayOrigin, const Vec3& lightPos, const Vec3& intersectionPoint, const Vec3& normal,
